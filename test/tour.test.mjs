@@ -17,7 +17,7 @@ async function page(vp, opts = {}, slug = "phillimore-place") {
 }
 const state = (p) => p.evaluate(() => {
   const count = document.querySelector("aside b")?.textContent
-  const floor = document.querySelector("aside > div:nth-child(2) > div:first-child > div:first-child")?.textContent
+  const floor = (document.querySelector(".gt-phone") ? document.querySelector("aside > div:nth-child(2) > div:first-child")?.firstElementChild?.textContent : document.querySelector("aside > div:nth-child(2) > div:first-child")?.textContent)
   const on = document.querySelector(".gt-floor.gt-on")
   const here = on?.querySelector(".gt-here")
   const panel = document.querySelector("aside").getBoundingClientRect()
@@ -89,19 +89,33 @@ const scrollToRoom = (p, i, frac = 0.3) => p.evaluate(([i, frac]) => {
   const pe = await p.evaluate(() => getComputedStyle(document.querySelector(".gt-mk")).pointerEvents)
   const stageW = await p.evaluate(() => Math.round(document.querySelector("aside > div").getBoundingClientRect().width))
   ok("phone: sticky bar at top, room 02, full-width plan row, markers not clickable", s.panelTop === 0 && s.count === "02" && stageW === 342 && pe === "none", `${JSON.stringify(s)} ${stageW} ${pe}`)
-  const geo = async () => p.evaluate(() => { const on = document.querySelector(".gt-floor.gt-on"); const r = on.getBoundingClientRect(); const st = document.querySelector("aside > div").getBoundingClientRect(); const d = on.querySelector(".gt-here").getBoundingClientRect(); const img = on.querySelector("img"); return { w: Math.round(r.width), h: Math.round(r.height), cx: Math.round(r.x + r.width / 2 - st.x), stW: Math.round(st.width), stH: Math.round(st.height), dot: [Math.round(d.width), Math.round(d.height)], tf: getComputedStyle(on).transform, nat: [img.naturalWidth, img.naturalHeight], click: document.elementFromPoint(d.x + 4, d.y + 4)?.className } })
-  let g = await geo()
-  ok("phone: ground plan lying, max 100 high, centred, ratio 672x368", g.h <= 100 && g.w <= 342 && Math.abs(g.cx - 171) <= 1 && Math.abs(g.w / g.h - 672 / 368) < 0.02 && g.stH === 100, JSON.stringify(g))
-  ok("phone: gold dot stays round 8px", g.dot[0] === 8 && g.dot[1] === 8, JSON.stringify(g.dot))
-  await scrollToRoom(p, 2); await sleep(700); g = await geo()
-  ok("phone: lower ground lying, ratio 992x368, fits", g.h <= 100 && g.w <= 342 && Math.abs(g.w / g.h - 992 / 368) < 0.02 && Math.abs(g.cx - 171) <= 1, JSON.stringify(g))
+  const geo = async () => p.evaluate(() => {
+    const st = document.querySelector("aside > div").getBoundingClientRect()
+    const layers = [...document.querySelectorAll(".gt-floor.gt-on")]
+    const plan = layers[0].getBoundingClientRect()
+    const dots = [...layers[1].querySelectorAll(".gt-mk, .gt-here")].map((d) => { const r = d.getBoundingClientRect(); return [Math.round(r.x + r.width / 2 - st.x), Math.round(r.y + r.height / 2 - st.y)] })
+    const here = layers[1].querySelector(".gt-here").getBoundingClientRect()
+    return { stW: Math.round(st.width), stH: Math.round(st.height), ov: getComputedStyle(document.querySelector("aside > div")).overflow,
+      blend: getComputedStyle(layers[0]).mixBlendMode, planW: Math.round(plan.width), planH: Math.round(plan.height),
+      wallsH: Math.round(plan.height * 0.706), wallsTop: Math.round(plan.y - st.y + plan.height * 0.147), dots, here: [Math.round(here.width), Math.round(here.height)],
+      bar: Math.round(document.querySelector("aside").getBoundingClientRect().height) }
+  })
+  const inBox = (g) => g.dots.every(([x, y]) => x >= 6 && x <= g.stW - 6 && y >= 6 && y <= g.stH - 6)
+  for (const [room, name] of [[1, "ground"], [2, "lower ground"], [4, "first"], [6, "second"], [8, "third"]]) {
+    await scrollToRoom(p, room); await sleep(700); const g = await geo()
+    ok(`phone: ${name} - box ${g.stW}x150 clipped, blend, all dots inside, dot round 8px`, g.stW === 342 && g.stH === 150 && g.ov === "hidden" && g.blend === "darken" && inBox(g) && g.here[0] === 8 && g.here[1] === 8, JSON.stringify(g))
+    if (name === "ground") ok("phone: ground floor walls just inside the box", g.wallsTop >= 0 && g.wallsTop + g.wallsH <= 150 && g.wallsH >= 140, JSON.stringify({ wallsTop: g.wallsTop, wallsH: g.wallsH, bar: g.bar }))
+  }
   const fadeP = await p.evaluate(() => getComputedStyle(document.querySelector(".gt-floor.gt-on")).transitionDuration)
   ok("phone: crossfade still 0.5s", fadeP.startsWith("0.5s"), fadeP)
-  await p.screenshot({ path: OUT + "phone-kitchen.png", clip: { x: 0, y: 0, width: 390, height: 520 } })
-  await scrollToRoom(p, 6); await sleep(900)
-  const s7 = await state(p)
-  ok("phone: Principal Bedroom 07", s7.count === "07", JSON.stringify(s7))
-  await p.screenshot({ path: OUT + "phone-bedroom.png", clip: { x: 0, y: 0, width: 390, height: 520 } })
+  const btnH = await p.evaluate(() => Math.round(document.querySelector("button.gt-btn").getBoundingClientRect().height))
+  const oneLine = await p.evaluate(() => { const e = document.querySelector("aside > div:nth-child(2) > div:first-child"); return Math.round(e.getBoundingClientRect().height) })
+  ok("phone: Rooms button 32px, text on one line", btnH === 32 && oneLine < 25, `${btnH} ${oneLine}`)
+  for (const [i, file] of [[1, "phone-dining.png"], [2, "phone-kitchen.png"], [6, "phone-bedroom.png"]]) {
+    await p.evaluate((i) => { document.querySelectorAll("article")[i].scrollIntoView({ block: "start" }) }, i); await sleep(1200)
+    await p.evaluate((i) => { document.querySelectorAll("article")[i].scrollIntoView({ block: "start" }) }, i); await sleep(900)
+    await p.screenshot({ path: OUT + file, clip: { x: 0, y: 0, width: 390, height: 520 } })
+  }
   await scrollToRoom(p, 1); await sleep(700)
   const pad = await p.evaluate(() => getComputedStyle(document.querySelector("article")).paddingLeft)
   ok("phone: gutter 24", pad === "24px", pad)

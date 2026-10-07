@@ -164,6 +164,7 @@ export default function GarelliTour(props: GarelliTourProps) {
     const [view, setView] = useState({ active: 0, visit: 0, floorPos: {} as Record<number, { x: number; y: number }> })
 
     const phone = width !== null && width < 810
+    const zoom = Math.min(3, Math.max(1, num(props.phonePlanZoom) ?? 1.4))
     const gutter = width === null || width >= 1200 ? 64 : width >= 810 ? 40 : 24
 
     useEffect(() => {
@@ -300,6 +301,12 @@ export default function GarelliTour(props: GarelliTourProps) {
         openRef.current?.focus({ preventScroll: true })
     }
 
+    function onPlanLoad(index: number, img: HTMLImageElement) {
+        if (!img.naturalWidth || !img.naturalHeight) return
+        const next = { w: img.naturalWidth, h: img.naturalHeight }
+        setNatural((prev) => (prev[index]?.w === next.w && prev[index]?.h === next.h ? prev : { ...prev, [index]: next }))
+    }
+
     function go(i: number) {
         const el = roomRefs.current[i]
         if (!el) return
@@ -370,18 +377,67 @@ export default function GarelliTour(props: GarelliTourProps) {
                 <aside ref={panelRef} aria-label="Floor plan" style={panelStyle}>
                     <div
                         ref={stageRef}
-                        style={phone ? { position: "relative", width: "100%", height: 100 } : { position: "relative", flex: 1, minHeight: 0 }}
+                        style={phone ? { position: "relative", width: "100%", height: 150, overflow: "hidden" } : { position: "relative", flex: 1, minHeight: 0 }}
                     >
                         {floors.map((floor) => {
                             const nat = natural[floor.index] ?? { w: 368, h: 672 }
                             // Telefoon: plattegrond + stippen liggen samen in één laag die 90° tegen de klok in draait
-                            const s = !stage.w || !stage.h ? 0 : phone ? Math.min(stage.w / nat.h, stage.h / nat.w) : Math.min(stage.w / nat.w, stage.h / nat.h)
+                            const s = !stage.w || !stage.h ? 0 : phone ? Math.min(stage.w / nat.h, stage.h / nat.w) * zoom : Math.min(stage.w / nat.w, stage.h / nat.h)
                             const bw = nat.w * s
                             const bh = nat.h * s
+                            // Telefoon: na draaien ligt een punt (u, v) vanaf het midden op (v, -u); schuif zo nodig zodat alle stippen van deze verdieping in het vak blijven
+                            let dx = 0
+                            let dy = 0
+                            if (phone && s) {
+                                const m = 14
+                                const sx = floor.rooms.map((i) => (rooms[i].y / 100 - 0.5) * bh)
+                                const sy = floor.rooms.map((i) => -(rooms[i].x / 100 - 0.5) * bw)
+                                const fit = (lo: number, hi: number, half: number) =>
+                                    hi - lo > 2 * (half - m) ? -(lo + hi) / 2 : Math.max(-half + m - lo, Math.min(0, half - m - hi))
+                                dx = fit(Math.min(...sx), Math.max(...sx), stage.w / 2)
+                                dy = fit(Math.min(...sy), Math.max(...sy), stage.h / 2)
+                            }
                             const on = floor.index === currentFloor.index
                             const pos =
                                 (on ? { x: current.x, y: current.y } : view.floorPos[floor.index]) ??
                                 { x: rooms[floor.rooms[0]].x, y: rooms[floor.rooms[0]].y }
+                            if (phone) {
+                                const layer: CSSProperties = {
+                                    position: "absolute",
+                                    top: (stage.h - bh) / 2,
+                                    left: (stage.w - bw) / 2,
+                                    width: bw,
+                                    height: bh,
+                                    transform: `translate(${dx}px, ${dy}px) rotate(-90deg)`,
+                                    opacity: on ? 1 : 0,
+                                    visibility: on ? "visible" : "hidden",
+                                }
+                                return (
+                                    <div key={floor.index} aria-hidden={!on}>
+                                        <div className={on ? "gt-floor gt-on" : "gt-floor"} style={{ ...layer, mixBlendMode: "darken" }}>
+                                            {hasImage(floor.plan) && (
+                                                <img
+                                                    src={floor.plan!.src}
+                                                    alt={floor.plan!.alt || `${floor.name} plan`}
+                                                    draggable={false}
+                                                    onLoad={(e) => onPlanLoad(floor.index, e.currentTarget)}
+                                                    style={{ display: "block", width: "100%", height: "100%", userSelect: "none" }}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className={on ? "gt-floor gt-on" : "gt-floor"} style={layer}>
+                                            {floor.rooms.map((i) => (
+                                                <span key={i} className="gt-mk" aria-hidden style={{ left: `${rooms[i].x}%`, top: `${rooms[i].y}%` }} />
+                                            ))}
+                                            <span
+                                                key={on ? `a${view.visit}` : "i"}
+                                                className="gt-here"
+                                                style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            }
                             return (
                                 <div
                                     key={floor.index}
@@ -389,11 +445,10 @@ export default function GarelliTour(props: GarelliTourProps) {
                                     aria-hidden={!on}
                                     style={{
                                         position: "absolute",
-                                        top: phone ? (stage.h - bh) / 2 : 0,
+                                        top: 0,
                                         left: (stage.w - bw) / 2,
                                         width: bw,
                                         height: bh,
-                                        transform: phone ? "rotate(-90deg)" : undefined,
                                         opacity: on ? 1 : 0,
                                         visibility: on ? "visible" : "hidden",
                                     }}
@@ -403,16 +458,7 @@ export default function GarelliTour(props: GarelliTourProps) {
                                             src={floor.plan!.src}
                                             alt={floor.plan!.alt || `${floor.name} plan`}
                                             draggable={false}
-                                            onLoad={(e) => {
-                                                const img = e.currentTarget
-                                                if (!img.naturalWidth || !img.naturalHeight) return
-                                                const next = { w: img.naturalWidth, h: img.naturalHeight }
-                                                setNatural((prev) =>
-                                                    prev[floor.index]?.w === next.w && prev[floor.index]?.h === next.h
-                                                        ? prev
-                                                        : { ...prev, [floor.index]: next }
-                                                )
-                                            }}
+                                            onLoad={(e) => onPlanLoad(floor.index, e.currentTarget)}
                                             style={{ display: "block", width: "100%", height: "100%", userSelect: "none" }}
                                         />
                                     )}
@@ -422,8 +468,7 @@ export default function GarelliTour(props: GarelliTourProps) {
                                             type="button"
                                             className="gt-mk"
                                             aria-label={`Go to ${rooms[i].name}`}
-                                            tabIndex={phone || !on ? -1 : 0}
-                                            aria-hidden={phone || undefined}
+                                            tabIndex={on ? 0 : -1}
                                             onClick={() => go(i)}
                                             style={{ left: `${rooms[i].x}%`, top: `${rooms[i].y}%` }}
                                         />
@@ -438,69 +483,83 @@ export default function GarelliTour(props: GarelliTourProps) {
                         })}
                     </div>
 
-                    <div style={phone ? { display: "flex", alignItems: "center", gap: 16 } : { display: "contents" }}>
-                    <div
-                        style={
-                            phone
-                                ? { flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, minWidth: 0 }
-                                : { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }
-                        }
-                    >
-                        <div
-                            style={{
-                                fontFamily: DISPLAY,
-                                fontWeight: 300,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.14em",
-                                fontSize: phone ? 13 : 17,
-                            }}
-                        >
-                            {currentFloor.name}
-                        </div>
-                        {phone && (
+                    {phone ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                            <div
+                                style={{
+                                    flex: 1,
+                                    minWidth: 0,
+                                    display: "flex",
+                                    fontFamily: DISPLAY,
+                                    fontWeight: 300,
+                                    fontSize: 12,
+                                    letterSpacing: "0.12em",
+                                    textTransform: "uppercase",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {/* De verdieping kort eerst in, zodat de kamernaam zo lang mogelijk leesbaar blijft */}
+                                <span style={{ color: C.taupe, minWidth: "3.4em", flexShrink: 100000, overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    {currentFloor.name}
+                                </span>
+                                <span style={{ color: C.taupe, flexShrink: 0 }}>&nbsp;·&nbsp;</span>
+                                <span style={{ color: C.ink, minWidth: 0, flexShrink: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    {current.name}
+                                </span>
+                            </div>
                             <div
                                 style={{
                                     fontFamily: DISPLAY,
                                     fontWeight: 300,
-                                    fontSize: 15,
+                                    fontSize: 13,
                                     letterSpacing: "0.12em",
-                                    textTransform: "uppercase",
+                                    color: C.taupe,
+                                    fontVariantNumeric: "tabular-nums",
                                     whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    maxWidth: "100%",
+                                    flex: "0 0 auto",
                                 }}
                             >
-                                {current.name}
+                                <b style={{ color: C.ink, fontWeight: 300 }}>{pad(active + 1)}</b> / {pad(rooms.length)}
                             </div>
-                        )}
-                        <div
-                            style={{
-                                fontFamily: DISPLAY,
-                                fontWeight: 300,
-                                fontSize: 13,
-                                letterSpacing: "0.12em",
-                                color: C.taupe,
-                                fontVariantNumeric: "tabular-nums",
-                            }}
-                        >
-                            <b style={{ color: C.ink, fontWeight: 300 }}>{pad(active + 1)}</b> / {pad(rooms.length)}
+                            <button
+                                ref={openRef}
+                                type="button"
+                                className="gt-btn"
+                                aria-haspopup="dialog"
+                                aria-expanded={sheetOpen}
+                                onClick={() => setSheetOpen(true)}
+                                style={{ height: 32, padding: "0 12px", boxSizing: "border-box" }}
+                            >
+                                Rooms
+                            </button>
                         </div>
-                    </div>
-
-                    {phone ? (
-                        <button
-                            ref={openRef}
-                            type="button"
-                            className="gt-btn"
-                            aria-haspopup="dialog"
-                            aria-expanded={sheetOpen}
-                            onClick={() => setSheetOpen(true)}
-                        >
-                            Rooms
-                        </button>
-                    ) : null}
-                    </div>
+                    ) : (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+                            <div
+                                style={{
+                                    fontFamily: DISPLAY,
+                                    fontWeight: 300,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.14em",
+                                    fontSize: 17,
+                                }}
+                            >
+                                {currentFloor.name}
+                            </div>
+                            <div
+                                style={{
+                                    fontFamily: DISPLAY,
+                                    fontWeight: 300,
+                                    fontSize: 13,
+                                    letterSpacing: "0.12em",
+                                    color: C.taupe,
+                                    fontVariantNumeric: "tabular-nums",
+                                }}
+                            >
+                                <b style={{ color: C.ink, fontWeight: 300 }}>{pad(active + 1)}</b> / {pad(rooms.length)}
+                            </div>
+                        </div>
+                    )}
                     {phone ? null : (
                         <div style={{ display: "flex", flexDirection: "column-reverse", borderTop: `1px solid ${C.goldLine}` }}>
                             {floors.map((floor) => (
@@ -697,5 +756,14 @@ for (let r = 1; r <= ROOM_COUNT; r++) {
     }
     controls[`room${r}PlanX`] = { type: ControlType.Number, title: `Room ${r} Plan X`, defaultValue: 50, min: 0, max: 100, step: 0.1, unit: "%" }
     controls[`room${r}PlanY`] = { type: ControlType.Number, title: `Room ${r} Plan Y`, defaultValue: 50, min: 0, max: 100, step: 0.1, unit: "%" }
+}
+controls.phonePlanZoom = {
+    type: ControlType.Number,
+    title: "Phone Plan Zoom",
+    defaultValue: 1.4,
+    min: 1,
+    max: 3,
+    step: 0.05,
+    description: "Enlarges the plan in the phone bar so the walls fill it; the empty margin around the plan is cut off.",
 }
 addPropertyControls(GarelliTour, controls)
