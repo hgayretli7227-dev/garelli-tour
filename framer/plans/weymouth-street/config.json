@@ -1,0 +1,13 @@
+{"slug": "weymouth-street", "name": "Weymouth Street",
+ "floors": [["Lower Floor", "plan1.png"], ["Upper Floor", "plan2.png"]],
+ "rooms": [
+  ["hall", "Entrance Hall", 1, "The lift opens straight into the hall, so there is no shared landing to cross. A long corridor of pale oak leads past the study towards the living room, with storage built flush into the walls on either side. A steel-framed door at the end lets the daylight from the front reach all the way back."],
+  ["living", "Living Room", 1, "The living room runs across the whole front of the lower floor, under a ceiling that steps up in the centre. Black steel windows, made to echo the originals below, look out on two sides. The oak floor continues from the hall, and there is room for two sofas and a reading chair without crowding."],
+  ["dining", "Dining Room", 1, "The middle of the long room is set up for dining, with panelling to dado height and a crystal chandelier over the table. It seats ten. A gilt mirror on the long wall doubles the light from the windows."],
+  ["kitchen", "Kitchen", 1, "The kitchen closes the long room at the far end, with a waterfall island in veined marble and a wall of dark oak cabinetry that hides the larder and the appliances. It is part of the living space rather than a room apart. A utility room and a shower room are just behind it."],
+  ["stair", "Stair", 1, "A stone stair rises from the hall to the bedroom floor, set into a plastered opening with nothing to interrupt it. Daylight comes down from the window on the upper landing. The plaster has been left in its natural warm colour."],
+  ["principal", "Principal Bedroom", 2, "At the front of the upper floor, with a glazed door straight onto the terrace. A steel-framed screen of reeded glass separates the bed from a small sitting area, so both share the light. The principal bath is across the landing."],
+  ["bath", "Principal Bathroom", 2, "A freestanding bath stands in front of a tall steel window, with a blind for privacy. The floor is terrazzo and the walls are plain white plaster. A walk-in shower and a double basin run along the inner wall."],
+  ["bedroom", "Bedroom", 2, "The second bedroom also opens onto the terrace, and its windows on two sides look over the rooftops towards the trees of Regent’s Park. Pale oak boards and white walls keep it simple. A third bedroom and a bathroom are behind it."],
+  ["terrace", "Roof Terrace", 2, "The terrace wraps around the front and one side of the upper floor, about eighty-five square metres in all. It is decked in hardwood behind a glass balustrade, with planting along the parapet. In summer it works as a second living room, and in the evening the sun goes down over the chimneys of Marylebone."]
+ ]}
