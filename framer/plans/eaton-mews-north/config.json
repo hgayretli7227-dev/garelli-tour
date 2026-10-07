@@ -1,0 +1,12 @@
+{"slug": "eaton-mews-north", "name": "Eaton Mews North",
+ "floors": [["Ground Floor", "plan1.png"], ["First Floor", "plan2.png"], ["Second Floor", "plan3.png"], ["Roof", "plan4.png"]],
+ "rooms": [
+  ["kitchen", "Kitchen", 1, "The old carriage doors open straight into the kitchen, which takes the whole front of the ground floor. White cabinetry and a small island sit on pale oak boards, with a glazed door to the mews beside them. On a fine day the carriage doors stand open and the kitchen becomes part of the cobbles."],
+  ["dining", "Dining Room", 1, "Behind the stair, the dining room has a built-in bench under the back window and a round marble table that seats six. Sheer linen at the window softens the light from the gardens of Eaton Square. It is the quietest room on the ground floor."],
+  ["stair", "Stair", 1, "A straight stair runs across the middle of the house, rising through all three floors to the roof. Above it, a glazed roof added in 2016 brings daylight down to the kitchen, which the old coach house never had. The treads are oak with a natural sisal runner."],
+  ["living", "Living Room", 2, "The living room fills the front of the first floor, where the grooms once slept above the carriages. Two tall sash windows face the mews, and a white marble fireplace stands between them. The ceilings here are higher than the scale of the house suggests from outside."],
+  ["bedroom", "Bedroom", 2, "At the back of the first floor, with fitted wardrobes on either side of a window over the neighbouring gardens. It is a calm, simple room, made for guests or a child. The shower room is next door."],
+  ["principal", "Principal Bedroom", 3, "The rebuild gave the house a proper principal suite across the whole front of the top floor. A pair of French doors opens onto a shallow balcony over the mews, and a marble fireplace faces the bed. Full-height wardrobes are built in either side of the doors."],
+  ["bath", "Principal Bathroom", 3, "Across the landing from the bedroom, with tongue-and-groove panelling, brass fittings and a bath under the back window. The basin stands on a pedestal in the old style. A third bedroom shares this floor."],
+  ["terrace", "Roof Terrace", 4, "A small terrace on the roof, reached by the stair and set behind the parapet so it cannot be seen from the mews. It is planted along the edges and has room for a table for four. From here the view is of chimneys and treetops in every direction."]
+ ]}
