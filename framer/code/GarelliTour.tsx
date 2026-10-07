@@ -322,9 +322,8 @@ export default function GarelliTour(props: GarelliTourProps) {
               top: 0,
               zIndex: 5,
               display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 16,
+              flexDirection: "column",
+              gap: 10,
               padding: `10px ${gutter}px`,
               background: C.champagne,
               borderBottom: `1px solid ${C.goldLine}`,
@@ -371,11 +370,12 @@ export default function GarelliTour(props: GarelliTourProps) {
                 <aside ref={panelRef} aria-label="Floor plan" style={panelStyle}>
                     <div
                         ref={stageRef}
-                        style={phone ? { position: "relative", flex: "0 0 64px", height: 118 } : { position: "relative", flex: 1, minHeight: 0 }}
+                        style={phone ? { position: "relative", width: "100%", height: 100 } : { position: "relative", flex: 1, minHeight: 0 }}
                     >
                         {floors.map((floor) => {
                             const nat = natural[floor.index] ?? { w: 368, h: 672 }
-                            const s = stage.w && stage.h ? Math.min(stage.w / nat.w, stage.h / nat.h) : 0
+                            // Telefoon: plattegrond + stippen liggen samen in één laag die 90° tegen de klok in draait
+                            const s = !stage.w || !stage.h ? 0 : phone ? Math.min(stage.w / nat.h, stage.h / nat.w) : Math.min(stage.w / nat.w, stage.h / nat.h)
                             const bw = nat.w * s
                             const bh = nat.h * s
                             const on = floor.index === currentFloor.index
@@ -389,10 +389,11 @@ export default function GarelliTour(props: GarelliTourProps) {
                                     aria-hidden={!on}
                                     style={{
                                         position: "absolute",
-                                        top: 0,
+                                        top: phone ? (stage.h - bh) / 2 : 0,
                                         left: (stage.w - bw) / 2,
                                         width: bw,
                                         height: bh,
+                                        transform: phone ? "rotate(-90deg)" : undefined,
                                         opacity: on ? 1 : 0,
                                         visibility: on ? "visible" : "hidden",
                                     }}
@@ -437,6 +438,7 @@ export default function GarelliTour(props: GarelliTourProps) {
                         })}
                     </div>
 
+                    <div style={phone ? { display: "flex", alignItems: "center", gap: 16 } : { display: "contents" }}>
                     <div
                         style={
                             phone
@@ -497,7 +499,9 @@ export default function GarelliTour(props: GarelliTourProps) {
                         >
                             Rooms
                         </button>
-                    ) : (
+                    ) : null}
+                    </div>
+                    {phone ? null : (
                         <div style={{ display: "flex", flexDirection: "column-reverse", borderTop: `1px solid ${C.goldLine}` }}>
                             {floors.map((floor) => (
                                 <button

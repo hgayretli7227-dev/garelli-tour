@@ -17,7 +17,7 @@ async function page(vp, opts = {}, slug = "phillimore-place") {
 }
 const state = (p) => p.evaluate(() => {
   const count = document.querySelector("aside b")?.textContent
-  const floor = document.querySelector("aside > div:nth-child(2) > div")?.textContent
+  const floor = document.querySelector("aside > div:nth-child(2) > div:first-child > div:first-child")?.textContent
   const on = document.querySelector(".gt-floor.gt-on")
   const here = on?.querySelector(".gt-here")
   const panel = document.querySelector("aside").getBoundingClientRect()
@@ -88,7 +88,21 @@ const scrollToRoom = (p, i, frac = 0.3) => p.evaluate(([i, frac]) => {
   let s = await state(p)
   const pe = await p.evaluate(() => getComputedStyle(document.querySelector(".gt-mk")).pointerEvents)
   const stageW = await p.evaluate(() => Math.round(document.querySelector("aside > div").getBoundingClientRect().width))
-  ok("phone: sticky bar at top, room 02, 64px plan, markers not clickable", s.panelTop === 0 && s.count === "02" && stageW === 64 && pe === "none", `${JSON.stringify(s)} ${stageW} ${pe}`)
+  ok("phone: sticky bar at top, room 02, full-width plan row, markers not clickable", s.panelTop === 0 && s.count === "02" && stageW === 342 && pe === "none", `${JSON.stringify(s)} ${stageW} ${pe}`)
+  const geo = async () => p.evaluate(() => { const on = document.querySelector(".gt-floor.gt-on"); const r = on.getBoundingClientRect(); const st = document.querySelector("aside > div").getBoundingClientRect(); const d = on.querySelector(".gt-here").getBoundingClientRect(); const img = on.querySelector("img"); return { w: Math.round(r.width), h: Math.round(r.height), cx: Math.round(r.x + r.width / 2 - st.x), stW: Math.round(st.width), stH: Math.round(st.height), dot: [Math.round(d.width), Math.round(d.height)], tf: getComputedStyle(on).transform, nat: [img.naturalWidth, img.naturalHeight], click: document.elementFromPoint(d.x + 4, d.y + 4)?.className } })
+  let g = await geo()
+  ok("phone: ground plan lying, max 100 high, centred, ratio 672x368", g.h <= 100 && g.w <= 342 && Math.abs(g.cx - 171) <= 1 && Math.abs(g.w / g.h - 672 / 368) < 0.02 && g.stH === 100, JSON.stringify(g))
+  ok("phone: gold dot stays round 8px", g.dot[0] === 8 && g.dot[1] === 8, JSON.stringify(g.dot))
+  await scrollToRoom(p, 2); await sleep(700); g = await geo()
+  ok("phone: lower ground lying, ratio 992x368, fits", g.h <= 100 && g.w <= 342 && Math.abs(g.w / g.h - 992 / 368) < 0.02 && Math.abs(g.cx - 171) <= 1, JSON.stringify(g))
+  const fadeP = await p.evaluate(() => getComputedStyle(document.querySelector(".gt-floor.gt-on")).transitionDuration)
+  ok("phone: crossfade still 0.5s", fadeP.startsWith("0.5s"), fadeP)
+  await p.screenshot({ path: OUT + "phone-kitchen.png", clip: { x: 0, y: 0, width: 390, height: 520 } })
+  await scrollToRoom(p, 6); await sleep(900)
+  const s7 = await state(p)
+  ok("phone: Principal Bedroom 07", s7.count === "07", JSON.stringify(s7))
+  await p.screenshot({ path: OUT + "phone-bedroom.png", clip: { x: 0, y: 0, width: 390, height: 520 } })
+  await scrollToRoom(p, 1); await sleep(700)
   const pad = await p.evaluate(() => getComputedStyle(document.querySelector("article")).paddingLeft)
   ok("phone: gutter 24", pad === "24px", pad)
   await p.click("button.gt-btn"); await sleep(200)
