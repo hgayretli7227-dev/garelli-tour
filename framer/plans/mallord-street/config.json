@@ -1,0 +1,13 @@
+{"slug": "mallord-street", "name": "Mallord Street",
+ "floors": [["Garden Floor", "plan1.png"], ["Ground Floor", "plan2.png"], ["First Floor", "plan3.png"], ["Second Floor", "plan4.png"]],
+ "rooms": [
+  ["hall", "Entrance Hall", 2, "The front door opens into a narrow hall that runs the depth of the house to the wide timber staircase at the back. The stair is the original, with turned balusters and a heavy carved newel. Both reception rooms open off the hall, and a cloakroom sits beneath the landing."],
+  ["drawing", "Drawing Room", 2, "At the front of the ground floor, with two tall windows onto the street and a fireplace on the party wall. The floor is the original oak, and the shelving either side of the chimney was made by the present owners. A dining room behind it looks down the garden."],
+  ["kitchen", "Kitchen", 1, "The owners added the kitchen at garden level, across the whole back of the house. A long table stands in front of a pair of glazed timber doors that open straight onto the terrace. The room gets the sun from late morning, and a guest bedroom and shower room are at the front of this floor."],
+  ["garden", "Garden", 1, "The garden faces south and runs eighteen metres from the kitchen doors. A stone terrace gives way to a long lawn between planted borders, with two old trees at the far end. It is one of the quietest gardens on the street."],
+  ["principal", "Principal Bedroom", 3, "The front of the first floor, with timber panelling on two walls and a pair of tall windows hung with heavy linen. The floorboards are the originals. The bathroom is across the landing, and the study is behind."],
+  ["bath", "Bathroom", 3, "One of the two bathrooms the owners added, with a freestanding bath under a sash window and a long timber vanity built in the workshop. The floor is wide oak boards, treated for water. It serves the principal bedroom."],
+  ["study", "Study", 3, "At the back of the first floor, where the writer of the household worked. A long desk runs under a row of windows that look down the garden, with bookshelves on the inner wall. It is the room with the best light in the afternoon."],
+  ["bedroom", "Bedroom", 4, "At the back of the top floor, under the slope of the roof, with a window over the garden. Pale oak boards and plain white walls keep it simple. A third bedroom and a shower room share this floor."],
+  ["studio", "Studio", 4, "The reason the house was built: a studio across the whole front of the top floor, lit by a tall north window that gives the even light painters wanted. The present owners used it as a furniture workshop. It is a room that could become almost anything, and is best left as it is."]
+ ]}
