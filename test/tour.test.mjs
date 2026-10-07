@@ -17,7 +17,7 @@ async function page(vp, opts = {}, slug = "phillimore-place") {
 }
 const state = (p) => p.evaluate(() => {
   const count = document.querySelector("aside b")?.textContent
-  const floor = (document.querySelector(".gt-phone") ? document.querySelector("aside > div:nth-child(2) > div:first-child")?.firstElementChild?.textContent : document.querySelector("aside > div:nth-child(2) > div:first-child")?.textContent)
+  const floor = (document.querySelector(".gt-phone") ? document.querySelector("aside > div:nth-child(2) > div:first-child")?.firstElementChild?.textContent?.split(" · ")[0] : document.querySelector("aside > div:nth-child(2) > div:first-child")?.textContent)
   const on = document.querySelector(".gt-floor.gt-on")
   const here = on?.querySelector(".gt-here")
   const panel = document.querySelector("aside").getBoundingClientRect()
@@ -108,9 +108,19 @@ const scrollToRoom = (p, i, frac = 0.3) => p.evaluate(([i, frac]) => {
   }
   const fadeP = await p.evaluate(() => getComputedStyle(document.querySelector(".gt-floor.gt-on")).transitionDuration)
   ok("phone: crossfade still 0.5s", fadeP.startsWith("0.5s"), fadeP)
-  const btnH = await p.evaluate(() => Math.round(document.querySelector("button.gt-btn").getBoundingClientRect().height))
-  const oneLine = await p.evaluate(() => { const e = document.querySelector("aside > div:nth-child(2) > div:first-child"); return Math.round(e.getBoundingClientRect().height) })
-  ok("phone: Rooms button 32px, text on one line", btnH === 32 && oneLine < 25, `${btnH} ${oneLine}`)
+  const cap = () => p.evaluate(() => {
+    const box = document.querySelector("aside > div:nth-child(2) > div:first-child")
+    const vis = box.children[1]
+    const st = document.querySelector("aside > div").getBoundingClientRect()
+    const ctr = [...document.querySelectorAll("aside > div:first-child > div")].pop()
+    const c = ctr.getBoundingClientRect()
+    return { text: vis.textContent, boxW: Math.round(box.clientWidth), visW: Math.round(vis.scrollWidth), lines: Math.round(vis.getBoundingClientRect().height / 15), btnH: Math.round(document.querySelector("button.gt-btn").getBoundingClientRect().height),
+      counter: ctr.textContent, ctrTop: Math.round(c.top - st.top), ctrRight: Math.round(st.right - c.right), ctrFont: getComputedStyle(ctr).fontSize, ctrPad: getComputedStyle(ctr).padding, bar: Math.round(document.querySelector("aside").getBoundingClientRect().height) }
+  })
+  for (const [i, name] of [[1, "Dining Room"], [2, "Kitchen"], [6, "Principal Bedroom"], [9, "Study"]]) {
+    await scrollToRoom(p, i); await sleep(400); const c = await cap()
+    ok(`phone caption: ${name} in full, counter top-right in plan box, button 32, bar 213`, c.text.endsWith(name) && c.visW <= c.boxW && c.lines === 1 && c.btnH === 32 && c.ctrTop === 6 && c.ctrRight === 4 && c.ctrPad === "2px 4px" && c.ctrFont === "11px" && c.counter === `${String(i + 1).padStart(2, "0")} / 10` && c.bar === 213, JSON.stringify(c))
+  }
   for (const [i, file] of [[1, "phone-dining.png"], [2, "phone-kitchen.png"], [6, "phone-bedroom.png"]]) {
     await p.evaluate((i) => { document.querySelectorAll("article")[i].scrollIntoView({ block: "start" }) }, i); await sleep(1200)
     await p.evaluate((i) => { document.querySelectorAll("article")[i].scrollIntoView({ block: "start" }) }, i); await sleep(900)
@@ -136,6 +146,15 @@ const scrollToRoom = (p, i, frac = 0.3) => p.evaluate(([i, frac]) => {
   ok("phone: Close closes", !(await p.$("[role=dialog]")))
   await scrollToRoom(p, 4); await sleep(150)
   await p.screenshot({ path: OUT + "h-phone-bar.png" })
+  await p.context().close()
+}
+// ---- Extremely long room name wraps to 2 lines
+{
+  const p = await (async () => { const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, ignoreHTTPSErrors: true }); const pg = await ctx.newPage(); await pg.goto(`${base}?long=1`, { waitUntil: "networkidle" }); await sleep(300); return pg })()
+  await scrollToRoom(p, 6); await sleep(500)
+  const c = await p.evaluate(() => { const box = document.querySelector("aside > div:nth-child(2) > div:first-child"); const vis = box.children[1]; return { text: vis.textContent, h: Math.round(vis.getBoundingClientRect().height), bar: Math.round(document.querySelector("aside").getBoundingClientRect().height), over: vis.scrollWidth > box.clientWidth } })
+  ok("phone: very long name wraps to 2 lines, floor dropped, bar unchanged", c.text === "Principal Bedroom Suite with Dressing Room and Balcony" && c.h === 30 && !c.over && c.bar === 213, JSON.stringify(c))
+  await p.screenshot({ path: OUT + "phone-long.png", clip: { x: 0, y: 0, width: 390, height: 260 } })
   await p.context().close()
 }
 // ---- Reduced motion

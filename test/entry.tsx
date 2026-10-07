@@ -2,7 +2,8 @@ import { createRoot } from "react-dom/client"
 import GarelliTour from "./GarelliTour"
 import data from "./homes.json"
 const slug = new URLSearchParams(location.search).get("slug") || "phillimore-place"
-const props = (data as any)[slug]
+const props = { ...(data as any)[slug] }
+if (new URLSearchParams(location.search).get("long")) props.room7Name = "Principal Bedroom Suite with Dressing Room and Balcony"
 function Page() {
   return (
     <div style={{ overflow: "clip", background: "#FBF8F2" }}>

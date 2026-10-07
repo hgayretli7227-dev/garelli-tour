@@ -93,6 +93,15 @@ const CSS = `
 }
 `
 
+const caption: CSSProperties = {
+    fontFamily: DISPLAY,
+    fontWeight: 300,
+    fontSize: 12,
+    lineHeight: 1.25,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+}
+
 const label: CSSProperties = {
     fontFamily: DISPLAY,
     fontWeight: 300,
@@ -152,6 +161,9 @@ export default function GarelliTour(props: GarelliTourProps) {
     const pendingRef = useRef<{ i: number; until: number } | null>(null)
     const reduceRef = useRef(false)
     const openRef = useRef<HTMLButtonElement>(null)
+    const captionRef = useRef<HTMLDivElement>(null)
+    const captionMeasureRef = useRef<HTMLSpanElement>(null)
+    const [showFloor, setShowFloor] = useState(true)
     const closeRef = useRef<HTMLButtonElement>(null)
 
     // Breedte van de eigen container (niet van het venster): de canvas toont alle breakpoints naast elkaar
@@ -245,6 +257,23 @@ export default function GarelliTour(props: GarelliTourProps) {
             window.removeEventListener("resize", update)
         }
     }, [isStatic, rooms])
+
+    // Telefoon: verdieping alleen tonen als "verdieping · kamer" op één regel past; de kamernaam wordt nooit afgekapt
+    const captionKey = rooms.length ? `${rooms[Math.min(view.active, rooms.length - 1)].name}|${rooms[Math.min(view.active, rooms.length - 1)].floor}` : ""
+    useEffect(() => {
+        const box = captionRef.current
+        const measure = captionMeasureRef.current
+        if (!phone || !box || !measure) return
+        const update = () => {
+            const fits = measure.getBoundingClientRect().width <= box.clientWidth + 0.5
+            setShowFloor((prev) => (prev === fits ? prev : fits))
+        }
+        update()
+        if (typeof ResizeObserver === "undefined") return
+        const ro = new ResizeObserver(update)
+        ro.observe(box)
+        return () => ro.disconnect()
+    }, [phone, captionKey])
 
     // Foto's laden lui en verschuiven de kamers: na een sprong het doel opnieuw uitlijnen
     // zolang de bezoeker zelf niet scrolt (hoogstens 3 seconden)
@@ -481,45 +510,46 @@ export default function GarelliTour(props: GarelliTourProps) {
                                 </div>
                             )
                         })}
-                    </div>
-
-                    {phone ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                        {phone && (
                             <div
                                 style={{
-                                    flex: 1,
-                                    minWidth: 0,
-                                    display: "flex",
+                                    position: "absolute",
+                                    top: 6,
+                                    right: 4,
+                                    zIndex: 2,
+                                    padding: "2px 4px",
+                                    background: C.champagne,
                                     fontFamily: DISPLAY,
                                     fontWeight: 300,
-                                    fontSize: 12,
-                                    letterSpacing: "0.12em",
-                                    textTransform: "uppercase",
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
-                                {/* De verdieping kort eerst in, zodat de kamernaam zo lang mogelijk leesbaar blijft */}
-                                <span style={{ color: C.taupe, minWidth: "3.4em", flexShrink: 100000, overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {currentFloor.name}
-                                </span>
-                                <span style={{ color: C.taupe, flexShrink: 0 }}>&nbsp;·&nbsp;</span>
-                                <span style={{ color: C.ink, minWidth: 0, flexShrink: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {current.name}
-                                </span>
-                            </div>
-                            <div
-                                style={{
-                                    fontFamily: DISPLAY,
-                                    fontWeight: 300,
-                                    fontSize: 13,
+                                    fontSize: 11,
+                                    lineHeight: 1,
                                     letterSpacing: "0.12em",
                                     color: C.taupe,
                                     fontVariantNumeric: "tabular-nums",
                                     whiteSpace: "nowrap",
-                                    flex: "0 0 auto",
+                                    pointerEvents: "none",
                                 }}
                             >
                                 <b style={{ color: C.ink, fontWeight: 300 }}>{pad(active + 1)}</b> / {pad(rooms.length)}
+                            </div>
+                        )}
+                    </div>
+
+                    {phone ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                            <div ref={captionRef} style={{ flex: 1, minWidth: 0, position: "relative", overflow: "hidden" }}>
+                                {/* Meetregel: past "verdieping · kamer" niet op één regel, dan valt de verdieping weg */}
+                                <span
+                                    ref={captionMeasureRef}
+                                    aria-hidden
+                                    style={{ ...caption, position: "absolute", visibility: "hidden", whiteSpace: "nowrap", pointerEvents: "none" }}
+                                >
+                                    {currentFloor.name} · {current.name}
+                                </span>
+                                <div style={caption}>
+                                    {showFloor && <span style={{ color: C.taupe }}>{currentFloor.name} · </span>}
+                                    <span style={{ color: C.ink }}>{current.name}</span>
+                                </div>
                             </div>
                             <button
                                 ref={openRef}
