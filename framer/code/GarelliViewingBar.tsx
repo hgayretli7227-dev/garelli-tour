@@ -23,7 +23,7 @@ const CSS = `
 .gvb[data-on="false"] { transform: translateY(100%); opacity: 0; pointer-events: none; }
 .gvb[data-on="true"] { transform: translateY(0); opacity: 1; }
 .gvb.gvb-static { position: relative; transform: none; opacity: 1; }
-.gvb-in { box-sizing: border-box; max-width: 1440px; margin: 0 auto; height: 72px; padding: 0 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.gvb-in { --gvb-g: 64px; box-sizing: border-box; max-width: 1440px; margin: 0 auto; height: 72px; padding: 0 var(--gvb-g); display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .gvb-info { display: flex; align-items: baseline; gap: 16px; min-width: 0; }
 .gvb-name { font-family: ${DISPLAY}; font-weight: 300; font-size: 16px; letter-spacing: .14em; text-transform: uppercase; color: ${C.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gvb-price { font-family: ${BODY}; font-size: 14px; color: ${C.taupe}; white-space: nowrap; }
@@ -32,11 +32,25 @@ const CSS = `
   letter-spacing: .16em; text-transform: uppercase; padding: 14px 24px; text-align: center; transition: background-color .3s cubic-bezier(.44,0,.56,1); }
 .gvb-btn:hover { background: ${C.ink}; }
 .gvb-btn:focus-visible { outline: 1px solid ${C.ink}; outline-offset: 3px; }
-@media (max-width: 1199.98px) { .gvb-in { padding: 0 40px; } }
-@media (max-width: 809.98px) { .gvb-in { height: 64px; padding: 0 24px; gap: 16px; } .gvb-info { flex: 1 1 auto; } .gvb-name { display: none; } .gvb-price { white-space: normal; line-height: 1.25; } .gvb-btn { padding: 12px 18px; } }
+@media (max-width: 1199.98px) { .gvb-in { --gvb-g: 40px; } }
+@media (max-width: 809.98px) { .gvb-in { --gvb-g: 24px; height: 64px; gap: 16px; } .gvb-info { flex: 1 1 auto; } .gvb-name { display: none; } .gvb-price { white-space: normal; line-height: 1.25; } .gvb-btn { padding: 12px 18px; } }
 @media (max-width: 359.98px) { .gvb-info { display: none; } .gvb-btn { flex: 1 1 auto; } }
 @media (prefers-reduced-motion: reduce) { .gvb, .gvb[data-on="false"] { transform: none; transition: opacity .3s linear; } }
 `
+
+// "Made in Framer" badge (free plan): the widest visible element inside its container, or null
+function measureBadge(): { w: number; h: number } | null {
+    const box = document.getElementById("__framer-badge-container")
+    if (!box) return null
+    let best: { w: number; h: number } | null = null
+    box.querySelectorAll<HTMLElement>("*").forEach((el) => {
+        const r = el.getBoundingClientRect()
+        const cs = getComputedStyle(el)
+        if (r.width <= 0 || r.height <= 0 || cs.visibility === "hidden" || cs.display === "none" || cs.opacity === "0") return
+        if (!best || r.width > best.w) best = { w: Math.round(r.width), h: Math.round(r.height) }
+    })
+    return best
+}
 
 const money = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n)
 
@@ -57,6 +71,23 @@ export default function GarelliViewingBar({ name, price, priceNote, status, targ
     const sold = (status || "").trim().toLowerCase() === "sold"
     const [on, setOn] = useState(false)
     const [mounted, setMounted] = useState(false)
+    const [badge, setBadge] = useState<{ w: number; h: number } | null>(null)
+    const [wide, setWide] = useState(true)
+
+    useEffect(() => {
+        if (onCanvas || sold || typeof window === "undefined") return
+        const check = () => {
+            setBadge(measureBadge())
+            setWide(window.innerWidth > 600)
+        }
+        check()
+        const later = window.setTimeout(check, 1000) // the badge can be injected just after hydration
+        window.addEventListener("resize", check)
+        return () => {
+            window.clearTimeout(later)
+            window.removeEventListener("resize", check)
+        }
+    }, [onCanvas, sold])
 
     useEffect(() => {
         if (onCanvas || sold || typeof window === "undefined") return
@@ -107,9 +138,16 @@ export default function GarelliViewingBar({ name, price, priceNote, status, targ
     }
 
     const bar = (visible: boolean, isStatic: boolean) => (
-        <div className={isStatic ? "gvb gvb-static" : "gvb"} data-on={visible ? "true" : "false"} aria-hidden={visible ? undefined : true} role="region" aria-label="Arrange a viewing">
+        <div
+            className={isStatic ? "gvb gvb-static" : "gvb"}
+            data-on={visible ? "true" : "false"}
+            aria-hidden={visible ? undefined : true}
+            role="region"
+            aria-label="Arrange a viewing"
+            style={!isStatic && badge && !wide ? { bottom: badge.h + 16 } : undefined}
+        >
             <style>{CSS}</style>
-            <div className="gvb-in">
+            <div className="gvb-in" style={!isStatic && badge && wide ? { paddingRight: `calc(var(--gvb-g) + ${badge.w + 24}px)` } : undefined}>
                 <div className="gvb-info">
                     {name ? <span className="gvb-name">{name}</span> : null}
                     {priceText ? <span className={offer ? "gvb-price gvb-offer" : "gvb-price"}>{priceText}</span> : null}
