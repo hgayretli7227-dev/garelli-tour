@@ -601,7 +601,7 @@ export default function GarelliTour(props: GarelliTourProps) {
                                     onClick={() => go(floor.rooms[0])}
                                 >
                                     <span className="gt-fname">{floor.name}</span>
-                                    <span style={{ fontSize: 10.5, letterSpacing: "0.1em" }}>
+                                    <span style={{ fontSize: 11, letterSpacing: "0.1em" }}>
                                         {floor.rooms.length} {plural(floor.rooms.length, "room")}
                                     </span>
                                 </button>

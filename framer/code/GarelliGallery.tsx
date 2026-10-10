@@ -18,6 +18,13 @@ interface GarelliGalleryProps {
 interface Photo {
     image: ImageValue
     caption: string
+    hero?: boolean
+}
+
+// Alt-tekst: "Dining Room at Phillimore Place", "Front of Phillimore Place"; zonder woningnaam alleen het bijschrift
+function altFor(photo: Photo, homeName: string): string {
+    if (!homeName) return photo.caption
+    return photo.hero ? `${photo.caption} of ${homeName}` : `${photo.caption} at ${homeName}`
 }
 
 const ROOM_COUNT = 10
@@ -98,11 +105,12 @@ function Arrow({ dir }: { dir: "left" | "right" }) {
  */
 export default function GarelliGallery(props: GarelliGalleryProps) {
     const isStatic = useIsStaticRenderer()
+    const homeName = text(props.homeName)
 
     // Hero eerst, dan kamer 1 t/m 10; lege foto's vallen weg
     const photos = useMemo(() => {
         const list: Photo[] = []
-        if (hasImage(props.heroImage)) list.push({ image: props.heroImage, caption: "Front" })
+        if (hasImage(props.heroImage)) list.push({ image: props.heroImage, caption: "Front", hero: true })
         for (let r = 1; r <= ROOM_COUNT; r++) {
             const image = props[`room${r}Image`] as ImageValue | undefined
             if (hasImage(image)) list.push({ image, caption: text(props[`room${r}Name`]) || `Room ${r}` })
@@ -219,6 +227,7 @@ export default function GarelliGallery(props: GarelliGalleryProps) {
                               <img
                                   key={`out-${prev}`}
                                   className="gg-out"
+                                  loading="eager"
                                   src={previous.image.src}
                                   srcSet={previous.image.srcSet}
                                   sizes="100vw"
@@ -228,10 +237,11 @@ export default function GarelliGallery(props: GarelliGalleryProps) {
                           <img
                               key={`in-${open}`}
                               className={previous ? "gg-in" : undefined}
+                              loading="eager"
                               src={current.image.src}
                               srcSet={current.image.srcSet}
                               sizes="100vw"
-                              alt={current.image.alt || current.caption}
+                              alt={altFor(current, homeName)}
                           />
                           <button type="button" className="gg-tap gg-tap-l" aria-label="Previous photograph" tabIndex={-1} onClick={() => step(-1)} />
                           <button type="button" className="gg-tap gg-tap-r" aria-label="Next photograph" tabIndex={-1} onClick={() => step(1)} />
@@ -275,7 +285,7 @@ export default function GarelliGallery(props: GarelliGalleryProps) {
                         aria-label={`Open photograph: ${photo.caption}`}
                         onClick={isStatic ? undefined : () => openAt(i)}
                     >
-                        <img src={photo.image.src} srcSet={photo.image.srcSet} sizes={sizes} alt="" loading="lazy" />
+                        <img loading="lazy" src={photo.image.src} srcSet={photo.image.srcSet} sizes={sizes} alt={altFor(photo, homeName)} />
                     </button>
                 ))}
             </div>
@@ -285,6 +295,7 @@ export default function GarelliGallery(props: GarelliGalleryProps) {
 }
 
 const controls: Record<string, any> = {
+    homeName: { type: ControlType.String, title: "Home Name", defaultValue: "" },
     heroImage: { type: ControlType.ResponsiveImage, title: "Hero Image" },
 }
 for (let r = 1; r <= ROOM_COUNT; r++) {
