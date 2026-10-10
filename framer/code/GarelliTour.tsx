@@ -81,7 +81,7 @@ const CSS = `
 .gt-floorbtn.gt-on { color: ${C.ink}; }
 .gt-floorbtn.gt-on .gt-fname::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${C.gold}; margin-right: 10px; vertical-align: 2px; }
 .gt-floorbtn:focus-visible, .gt-btn:focus-visible, .gt-pick:focus-visible { outline: 1px solid ${C.gold}; outline-offset: 2px; }
-.gt-btn { font-family: ${DISPLAY}; font-weight: 300; font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; background: none; border: 1px solid ${C.gold}; color: ${C.ink}; padding: 10px 12px; cursor: pointer; flex: 0 0 auto; border-radius: 0; }
+.gt-btn { font-family: ${DISPLAY}; font-weight: 300; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; background: none; border: 1px solid ${C.gold}; color: ${C.ink}; padding: 10px 12px; cursor: pointer; flex: 0 0 auto; border-radius: 0; }
 .gt-x { all: unset; cursor: pointer; font-family: ${DISPLAY}; font-weight: 300; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: ${C.gold}; padding: 8px 0; }
 .gt-x:focus-visible { outline: 1px solid ${C.gold}; outline-offset: 2px; }
 .gt-pick { all: unset; box-sizing: border-box; cursor: pointer; display: flex; gap: 14px; width: 100%; padding: 11px 0; border-bottom: 1px solid color-mix(in srgb, ${C.goldLine} 50%, transparent); font-family: ${DISPLAY}; font-weight: 300; font-size: 15px; letter-spacing: .1em; text-transform: uppercase; color: ${C.ink}; }
